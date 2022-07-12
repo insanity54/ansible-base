@@ -1,0 +1,71 @@
+---
+
+  # work around the issue of Ansible asking for user input to verify
+  # authenticity of a remote host which is being contacted for the first time
+  # greets https://stackoverflow.com/a/54735937
+- name: Check SSH known_hosts for {{ inventory_hostname }}
+  local_action: shell ssh-keygen -F {{ inventory_hostname }}
+  register: checkForKnownHostsEntry
+  failed_when: false
+  changed_when: false
+  ignore_errors: yes
+
+- name: Add {{ inventory_hostname }} to SSH known hosts automatically
+  when: checkForKnownHostsEntry.rc == 1
+  changed_when: checkForKnownHostsEntry.rc == 1
+  set_fact:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+
+- name: Wait up to 600 seconds for SSH to be up
+  wait_for_connection:
+    timeout: 600
+
+- name: wait for boot-finished file to exist
+  raw: test -f /var/lib/cloud/instance/boot-finished
+  retries: 50
+  register: cmd_res
+  changed_when: false
+  until: cmd_res is success
+
+- name: gather facts
+  ansible.builtin.setup:
+
+- name: set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Enable journalctl persistent logging
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    search_string: '^Storage='
+    line: 'Storage=persistent'
+    state: present
+  notify: 
+    - restart systemd-journald
+
+- name: setup bash aliases file
+  ansible.builtin.file:
+    path: /root/.bash_aliases
+    state: touch
+    owner: root
+    group: root
+    mode: 0664
+
+- name: create ufw exception for mosh
+  community.general.ufw:
+    rule: allow
+    port: 60000:61000
+    proto: udp
+
+- name: Install dependencies
+  become: yes
+  apt:
+    pkg: 
+      - python3
+      - python3-pip
+      - mosh
+    state: present
+    update_cache: yes
+
+
