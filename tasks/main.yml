@@ -80,9 +80,11 @@
     state: present
     update_cache: yes
 
-- name: disable eternal terminal telemetry
-  lineinfile:
-    regex: telemetry = 
-    line: telemetry = 0
-    path: /etc/et.cfg
+- name: configure et
+  template:
+    src: et.cfg.j2
+    dest: /etc/et.cfg
+    owner: root
+    group: root
+    mode: '0644'
   notify: restart et
