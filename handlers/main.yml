@@ -4,3 +4,8 @@
   ansible.builtin.systemd:
     name: systemd-journald
     state: restarted
+
+- name: restart et
+  ansible.builtin.systemd:
+    name: et
+    state: restarted

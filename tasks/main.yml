@@ -66,7 +66,7 @@
 - name: create ufw exception for et
   community.general.ufw:
     rule: allow
-    port: 2022
+    port: '2022'
     proto: tcp
 
 - name: Install dependencies
@@ -80,4 +80,9 @@
     state: present
     update_cache: yes
 
-
+- name: disable eternal terminal telemetry
+  lineinfile:
+    regex: telemetry = 
+    line: telemetry = 0
+    path: /etc/et.cfg
+  notify: restart et
