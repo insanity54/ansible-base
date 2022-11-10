@@ -52,11 +52,22 @@
     group: root
     mode: 0664
 
+- name: add repo for eternal terminal
+  ansible.builtin.apt_repository:
+    repo: 'ppa:jgmath2000/et'
+    state: present
+
 - name: create ufw exception for mosh
   community.general.ufw:
     rule: allow
     port: 60000:61000
     proto: udp
+
+- name: create ufw exception for et
+  community.general.ufw:
+    rule: allow
+    port: 2022
+    proto: tcp
 
 - name: Install dependencies
   become: yes
@@ -65,6 +76,7 @@
       - python3
       - python3-pip
       - mosh
+      - et
     state: present
     update_cache: yes
 
